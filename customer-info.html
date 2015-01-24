@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Shipment Delivery Center</title>
+    	<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    	<meta charset="utf-8">
+     	<link rel="stylesheet" href="css/main.css"> 
+    	<link rel="stylesheet" href="css/map.css">
+    	<script src="https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp"></script>
+      <script type="text/javascript" src="js/jquery.js"></script>
+      <script src="js/jquery.js"></script>
+      <script src="js/d3.js" charset="utf-8"></script>
+    	<Script src="js/customer-info.js"></script>
+      
+
+  </head>
+  <body>
+	<div class="Customerpageheader">
+        <div class="topbarGreen">
+      		<div class="CustomerGemaltoLogo"></div>
+      		<div class="saplogo"></div>
+      	</div>
+        <div class="topbarWhite"></div>
+        <div class="topbarMidGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarLightGreen"></div>
+        <center><div class="CustomerShopLogo"></div></center>
+  </div>
+        <div class="CustomerGreenText">
+        	<!-- <div class="CustomerPara">Alert: <br><br>Dear Customer, <br>Your Shop&Go delivery is arriving. <br>Expected time is 30 minutes. <br>Follow up the approach in real time.<br><br>Check it now.
+        	</div> -->
+          <div class="CustomerPara">Alert:</div><br>
+          <div class="CustomerPara">Dear Customer,</div>
+          <div class="CustomerPara" id="arrived">Your Shop&Go delivery is arriving.</div>
+          <div class="CustomerPara" id="CustomerExpTime"></div>
+          <div class="CustomerPara">Follow up the approach in real time.</div><br>
+          <div class="CustomerPara">Check it now.</div>
+
+        </div>
+
+    <div class="CustomerMap">
+    	<div id="map-canvas"></div>
+    </div> 
+
+    <div class="clear"></div>
+
+    <div class="CustomerbarDarkBlue">
+    	<div class="CustomerPara2" id="trucknumber"> Truck 1 - On Time</div>
+    	<div class="CustomerPara2"> 
+        <span><img src="images/blueMarker.png"></img></span>
+        <span id="Custaddress">Grünewaldstraße 6, 40474 Düsseldorf, Germany</span>
+      </div>
+    </div> 
+
+    <div class="CustomerbottombarGreen">
+    	<div class="CustomerPara1"> Hope to see you soon on our on-line shopping</div>
+    </div>
+
+    <div class="CustomerShopImage"><img src="images/shop_experience.png" alt="starting" style="width: 100%"></img></div>
+
+    <div class="CustomerbottombarGreen"></div>
+
+  </body>
+</html>
+

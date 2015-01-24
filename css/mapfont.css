@@ -1,0 +1,101 @@
+@charset "UTF-8";
+
+@font-face {
+  font-family: "map";
+  src:url("../fonts/map.eot");
+  src:url("../fonts/map.eot?#iefix") format("embedded-opentype"),
+    url("../fonts/map.woff") format("woff"),
+    url("../fonts/map.ttf") format("truetype"),
+    url("../fonts/map.svg#map") format("svg");
+  font-weight: normal;
+  font-style: normal;
+
+}
+
+@font-face {
+  font-family: "route";
+  src:url("../fonts/route.eot");
+  src:url("../fonts/route.eot?#iefix") format("embedded-opentype"),
+    url("../fonts/route.woff") format("woff"),
+    url("../fonts/route.ttf") format("truetype"),
+    url("../fonts/route.svg#route") format("svg");
+  font-weight: normal;
+  font-style: normal;
+
+}
+
+[data-icon]:before {
+  font-family: "map" !important;
+  content: attr(data-icon);
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+  font-family: "map" !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-call:before {
+  content: "a";
+}
+.icon-flag:before {
+  content: "b";
+}
+.icon-marker:before {
+  content: "c";
+}
+.icon-msg:before {
+  content: "d";
+}
+.icon-truck:before {
+  content: "e";
+}
+
+[class^="routeicon-"]:before,
+[class*=" routeicon-"]:before {
+  font-family: "route" !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.routeicon-2arrowup:before {
+  content: "a";
+}
+.routeicon-check:before {
+  content: "b";
+}
+.routeicon-reset:before {
+  content: "c";
+}
+.routeicon-ppl:before {
+  content: "d";
+}
+.routeicon-calander:before {
+  content: "e";
+}
+.routeicon-arrowup:before {
+  content: "f";
+}
+
+.info_iconsize {
+  font-size: 24px;
+  margin-left: 4px;
+  color: #2D5B97;
+}
+
+.address_marker {
+  font-size: 32px;
+  line-height: 22px;
+  margin-top: 10px;
+  color: #565B61;
+  float: left;
+}

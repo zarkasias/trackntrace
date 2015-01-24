@@ -1,0 +1,487 @@
+
+
+html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+      }
+
+body {
+    background-color: #ffffff;
+ }
+
+/*page layout*/
+
+  .pageheader {
+    background-color: #fff;
+    border-bottom: solid 1px #2F3742;
+    position: relative;
+    height: 140px;
+
+  }  
+
+  .topbarGreen {
+    width: 100%;
+    height: 40px;
+    background-color: #92be14;
+  }
+
+  .topbarWhite {
+    width: 100%;
+    height: 10px;
+    background-color: #fff;
+  }
+
+  .topbarMidGreen {
+    width: 100%;
+    height: 25px;
+    background-color: #c1d771;
+  }
+
+  .topbarLightGreen {
+    width: 100%;
+    height: 15px;
+    background-color: #e0ebba;
+  }
+
+  .headDataContainer {
+    background-color: #fff;
+  }
+
+  .shopLogo {
+    background: url(../images/shop-logo.png) no-repeat;
+    float: left;
+    width: 199px;
+    height: 35px;
+    margin-top: 2px;
+    margin-left: 30px;
+    }
+
+  .applabel {
+    margin-top: .6%;
+    margin-left: 1%;
+    font: 18px Arial, Helvetica;
+    color: #2c2c2c;
+    float: left;
+  }
+
+  .pagelabel {
+    float: right;
+    font: 22px Arial, Helvetica;
+    margin-top: .4%;
+    margin-right: 1%;
+  }
+
+  .pagefooter {
+    background-color: #92be14;
+    width: 100%;
+    height: 41px;
+  }
+
+  .saplogo {
+    background: url(../images/sap.png) no-repeat;
+    width: 67px;
+    height: 33px;
+    margin-top: 4px;
+    margin-right: 1%;
+    float: right;
+  }
+
+  .gemaltologo {
+    background: url(../images/gemalto.png) no-repeat;
+    width: 98px;
+    height: 34px;
+    margin-top: 4px;
+    margin-right: 1%;
+    float: right;
+  }
+
+  .powered {
+    float: right;
+    font: 16px Arial, Helvetica;
+    color: #fff;
+    margin-top: .8%;
+    margin-right: 1%;
+  }
+
+.map-container {
+    width: 75%;
+    height: 75%;
+    float: left;
+    margin-top: 0px;
+    overflow: hidden;
+  }
+
+  .table-container {
+    background-color: #ffffff;
+    float: left;
+    width: 25%;
+    height: 75%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }  
+
+  #map-canvas {
+        padding: 0px;
+        margin: 0px; 
+        width: 100%;
+        height: 100%;     
+      }
+
+ /*common classes*/     
+
+.handle {
+    padding: 1px 4px 1px 4px;
+    cursor: pointer;
+    background-color: #999;
+    border: 1px solid #8A8A8A;
+    margin-right: 5px;
+    margin-top: 5px;
+  }
+
+  .handle a {
+    color: #fff;
+    text-decoration: none;
+  }    
+
+#tableheader {       
+    margin-left: 20px;
+    margin-right: 20px;
+    border-bottom: 1px solid #d7d7d7;
+  }
+
+  #theader {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font: 16px 'Arial Narrow', Arial, Helvetica;
+    color: #888888;
+    padding: 0;
+  }
+
+  #tbuildheader {
+    margin: 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font: 16px 'Arial Narrow', Arial, Helvetica;
+    color: #888888;
+    padding: 0;
+    float: left;
+  }
+
+  #selectAll {
+    float: right;
+    margin-top: 7px;
+  }
+
+  .tableBlock {
+    padding-bottom: 5px;
+    background-color: #fafbfa;
+    border-bottom: 1px solid #d7d7d7;
+    font-family: "Arial Narrow", Arial, sans-serif;
+    height: 110px;
+  }
+
+  .cBlock {
+    height: 120px;
+    padding-bottom: 20px;
+  }
+
+  .selectedBlock {
+    background-color: #091F45;
+  }
+
+   .waypointBlock {
+    margin-left: 20px;
+    margin-right: 20px;
+    padding-bottom: 5px;
+    border: 1px solid #525457;
+    font-family: "Arial Narrow", Arial, sans-serif;
+    height: 40px;
+    margin-bottom: 5px;
+  }
+
+  .customerOrder {
+    float: left;
+    margin-top: 10px;
+    margin-left: 10px;
+    font: bold 20px Arial, Helvetica;
+  }
+
+  .customerData {
+    float: left;
+    margin-left: 10px;
+    margin-top: 5px;
+  }
+
+  .customerData .customerName {
+    font: 16px Arial, Helvetica;
+  }
+
+  .customerData .customerAddress {
+    font: 14px Arial, Helvetica;
+  }
+
+  .customerBlock, .pointsBlock {    
+    margin-left: 20px;
+    margin-right: 20px;  
+  }
+
+  .tableBlock>.top , .pointsBlock>.top{
+    padding-top: 10px;
+    height: 30px;
+    font-size: 18px;
+  }
+
+  .tableBlock>.custtop, .customerBlock>.custtop{
+    padding-top: 10px;
+    font-size: 20px;
+  }
+
+  .truckId {
+    float: left;
+    color: #0066a0;
+  }
+
+  .orderId {
+    float: left;
+    color: #0066a0;
+  }
+
+  .tableBlock .status {
+    float: right;
+    margin-top: -3px;
+  }
+
+  .tableBlock .address {
+    font-size: 14px;
+    color: #aeaeae;
+    width: 290px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .truckId a {
+    text-decoration: none;
+    color: #0066a0;
+  }
+
+  .tableBlock .selectedId a {
+    text-decoration: none;
+    color: #f1ab1c;
+  }
+
+  .tableBlock .status{
+    float: right;
+  }
+
+  .tableBlock .custContainer {
+    margin-top: 5px; 
+  }
+
+  .tableBlock .infoContainer{
+    height: 40px;
+  }
+
+  .infoContainer div{
+    float: left;
+    width:50%;
+  }
+
+  .tableBlock .label{
+    font-size: 13px;
+    color: #686969;
+  }
+
+  .tableBlock .data{
+    color:#C1C4C9;
+    font-size: 17px;
+  }
+  /*.tableBlock .truckId a {
+    color: #2D5B95;
+    text-decoration: none;
+  }
+
+  .tableBlock .status {
+    float: right;
+    margin-top: 10px;
+    font: bold 16px 'Arial Narrow', Arial, Helvetica;
+    color: #5BC32E;
+  }
+
+  .tableBlock .section {
+      float: left;
+      margin-top: 6px;
+  }*/
+
+  #shipment, #start {
+    width: 50%;
+  }
+
+.sectiontitle {
+    font: 13px 'Arial Narrow', Arial, Helvetica;
+    color: #222222;
+  }
+
+  .sectioncontent {
+    font: 16px Arial, Helvetica;
+    color: #aeaeae;
+  }
+
+  .sectioncontent #date {
+    margin-left: 4px;
+    vertical-align: middle;
+    font: 13px Arial, Helvetica;
+  }
+
+  .ins-header {
+    font: bold 19px Arial, Helvetica;
+    color: #C1C4C9;
+  }
+
+  .ins-body {
+    font: 16px Arial, Helvetica;
+    color: #C1C4C9;
+  }
+
+  .clear {
+        clear: both;
+      }
+
+  .Customerpageheader {
+    background-color: #fff;
+   
+    height: 140px;
+  }  
+
+  .CustomerShopLogo {
+    background: url(../images/shop-logo.png) no-repeat;
+    width: 199px;
+    height: 35px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2px;
+  }
+
+  .CustomerGemaltoLogo {
+    background: url(../images/gemalto.png) no-repeat;
+    float: left;
+    width: 98px;
+    height: 34px;
+    margin-top: 4px;
+    margin-right: 1%;
+  }
+
+  .CustomerGreenText {
+    width: 100%;
+    height: 375px;
+    background-color: #92be14;
+    margin-top: 0px;
+    padding: 0;
+    margin: 0;
+  }
+
+  .CustomerMap {
+    width: 100%;
+    height: 85%;
+    float: left;
+    margin-top: 0px;
+    overflow: hidden;
+  }
+
+  .CustomerbarDarkBlue {
+    width: 100%;
+    height: 70px;
+    background-color: #000066;
+    padding-bottom: 20px;
+    padding-top: 5px;
+  }
+
+  .CustomerbottombarGreen {
+    width: 100%;
+    height: 60px;
+    background-color: #92be14;
+    margin-top: 0px;
+    padding-top: 5px;
+  }
+
+  .CustomerPara {
+    margin-top: 0px;
+    margin-left: 20px;
+    font-size: 23px ;
+    text-align: left;
+    padding-top: 5px;
+    font-family: Arial;
+  }
+
+  .CustomerPara1 {
+    margin-top: 0px;
+    margin-left: 10px;
+    font-size: 17px ;
+    text-align: left;
+    padding-top: 7px;
+    font-family: Arial;
+  }
+
+  .CustomerPara2 {
+    margin-top: 0px;
+    margin-left: 10px;
+    font-size: 17px ;
+    text-align: left;
+    color: #FFFFFF;
+    padding-top: 0px;
+    font-family: Arial;
+  }
+
+  .CustomerShopImage {
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .CustomerOrder {
+    margin-left: 20px;
+    margin-right: 20px;    
+    border: 1px solid #525457;
+    font-family: "Arial Narrow", Arial, sans-serif;
+    height: 25px;
+    width: 410px;
+  }
+
+  .CustomerOrderSubField {
+    margin-left: 20px;
+    margin-right: -10px;
+    padding-bottom: 5px;
+    border: 1px solid #525457;
+    font-family: "Arial Narrow", Arial, sans-serif;
+    height: 25px;
+    width: 192px;
+  }
+
+  .CustomerdropdownField {
+    margin-left: 20px;
+    margin-right: -10px;
+    padding-bottom: 5px;
+    border: 1px solid #525457;
+    font-family: "Arial Narrow", Arial, sans-serif;
+    height: 25px;
+    width: 204px;
+  }
+
+  .Orderbutton {
+    background-color: transparent;
+    border: 0px;
+    color: #000000;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .Orderbutton:focus {
+    outline: none;
+  }
+
+
+

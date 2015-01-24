@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Shipment Delivery Center</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="css/bootstrap.css"> 
+
+    <link rel="stylesheet" href="css/routemap.css">    
+    <link rel="stylesheet" href="css/mapfont.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/underscore.js"></script>
+    <script type="text/javascript" src="js/backbone.js"></script>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <script src="js/map-utilities.js"></script>
+
+    <meta charset="utf-8">
+  
+
+    <Script>
+
+    var fixedHeight = 183;
+    var sheight = $(window).height();
+    var containerHeight = ((sheight-fixedHeight)/sheight)*100;
+
+    $('.table-container').css('height', $(window).height());
+    var expand = true;
+    var map;
+    var updatestr="";
+    var routedata={};
+    var markerIconBlue; 
+    var markerIconGreen;
+    var startGreen;
+    var startBlue;
+    var placeMarkers = [];
+    var Locations;    
+    var sensorData = [];
+
+
+    function showHide() {
+      if (expand) {
+          $('.table-container').css('width', '0%');
+          $('.table-container').css('display', 'none');
+          $('.map-container').css('width', '100%');
+          expand = false;
+          //initialize();
+      }
+      else {
+          $('.table-container').css('width', '25%');
+          $('.table-container').css('display', 'block');
+          $('.map-container').css('width', '75%');
+          expand = true;
+          //initialize();
+      }
+    }
+   
+    function WebSocketTest()
+{
+  if ("WebSocket" in window)
+  {
+     console.log("WebSocket is supported by your Browser!");
+     $('.truckstatus').html('Delivery Center');
+     // Let us open a web socket
+     var ws = new WebSocket("ws://54.85.170.183:9092");
+     ws.onopen = function()
+     {
+        // Web Socket is connected, send data using send()
+        //ws.send("Hello");
+
+
+         ws.send("{\"topic\": \"/demo/logistics/SENSOR_POSITION\",\"messageType\": \"SUBSCRIBE\", \"subscribeOptions\": { \"base\": \"true\" },\"authorization\":\"Basic QWRtaW46d2FsbGRvcmY=\"}");
+//         alert("Message is sent...");
+     };
+    lineScale = d3.scale.linear();
+    colorScale = d3.scale.linear();
+    lineScale.domain([0.0,1.0]).range([5,105]);
+    colorScale.domain([0.0,1.0]).range(['green','red']);
+    var flag = false;
+     ws.onmessage = function (evt) 
+     { 
+
+        var response=jQuery.parseJSON(evt.data);
+        var updatedPosition ="";
+
+        if (response.event) {
+          updatedPosition = response.event.value;
+          var notification = updatedPosition[0].NOTIFICATION;
+          var routedetails = JSON.parse(updatedPosition[0].ROUTE_DETAILS);
+
+          console.log(routedetails);
+
+          if(!flag)
+          {
+            var array = [];
+            var startTime = 28800;
+            var legs = routedetails.Legs;
+            
+            var customers = JSON.parse(sessionStorage.getItem('customers'));
+
+            var names = [];
+            names.push('Delivery Center');
+            for(var i=0;i<customers.length;i++)
+            {
+              names.push(customers[i].name);
+            }
+            names.push('Delivery Center');
+            var stopData = [];
+            for(var i=0;i<names.length;i++)
+            {
+              stopData.push({
+                name: names[i],
+                expTime: startTime,
+                actTime: 0
+              });
+              if(i<legs.length) startTime += legs[i].ExpectedTime;
+            }
+            distanceData = routedetails.RouteDistance;
+            createEmptyProgBar(stopData,distanceData);
+            
+            flag = true;
+          }
+          var sumDis = 0;
+          _.each(distanceData,function(dis){
+            sumDis += dis;
+          });
+          var passedDistance = sumDis - routedetails.TotalDistaceToEnd;
+
+          drawPath(distanceData,passedDistance);
+          //var total = 6.018511384833151;
+          //var distance = updatedPosition[0].DISTANCE * 0.000621371192;
+          //updatestr += "Truck is currently at Latitude: " + updatedPosition[0].LATITUDE+ " Longitude: " + updatedPosition[0].LONGITUDE + "\n";
+          //$('textarea[name=logger]').val(updatestr);
+          //loops(distance,total,updatedPosition);
+
+          updateModel(routedetails.Legs);
+
+          //route leg information
+          var routeleg = routedetails.Legs[0];
+          //route leg id
+          var routeId = routeleg.RouteId;
+          //route distance
+          var legDistance = routeleg.LegDistance * 0.000621371192;
+          //actual time
+          var actualTime = routeleg.ActualTime;
+          //actual distance
+          var actualDistance = routeleg.ActualDistance * 0.000621371192;
+          //expected time
+          var expectedTime = routeleg.ExpectedTime;
+          //leg complete
+          var legComplete = routeleg.IsComplete;
+          //this leg true
+          var isonLeg = routeleg.IsTruckOnLeg;
+
+          if (Number(routeId) <= routepoints.length) {
+            $('#customeraddress').html(routepoints[(Number(routeId)+1)]);
+          }
+          else {
+            $('#customeraddress').html(sessionStorage.getItem('startPoint'));
+          }
+
+
+          //var total = 6.018511384833151;
+          //var distance = updatedPosition[0].DISTANCE * 0.000621371192;
+          
+          updatestr = "Truck is currently at Latitude: " + updatedPosition[0].LATITUDE+ " Longitude: " + updatedPosition[0].LONGITUDE + "\n" + updatestr;
+          $('textarea[name=logger]').val(updatestr);
+          //$('#textlog').show();
+          loops(actualDistance,legDistance,updatedPosition,routeId, legComplete);
+          //alert('event active');
+
+          cur = (legDistance-actualDistance)/legDistance;
+          //updateLine(cur);
+
+        }
+          
+        
+     };
+     ws.onclose = function()
+     { 
+        // websocket is closed.
+        alert("Connection is closed..."); 
+     };
+  }
+  else
+  {
+     // The browser doesn't support WebSocket
+     alert("WebSocket NOT supported by your Browser!");
+  }
+}
+
+</script>
+
+<script>
+    circles = [];
+    lines = [];
+    var x = 10;
+    var y = 20;
+    var r = 4.5;
+    var R = 6;
+
+    ProgressM = Backbone.Model.extend({
+      initialize: function(stops){
+        this.stops = stops;
+      }
+    });
+
+  CircleView = Backbone.View.extend({
+
+      initialize: function(data,id){
+        this.id = id;
+        this.cir = d3.select('#pBar').append('circle');
+        this.render(data);
+        //this.listenTo(this.model,'change',this.change);
+      },
+      draw: function(){
+        this.cir.attr('stroke','#00a13f');
+      },
+      change: function(data){
+        this.actTime.text(data);
+        if(data == 0)
+        {
+          this.name.attr('fill','#00a13f');
+          this.expTime.attr('fill','#00a13f');
+          this.actTime.attr('fill','#00a13f');
+        }
+      },
+      render:function(stopData){
+        this.x = x;
+        this.y = y;
+        this.r = r;
+         this.cir
+         .attr({stroke: '#D0D3D4', 'stroke-width': 3,'fill': 'none'})
+         .attr({cx:x,cy:y,r:r});
+
+        this.name = d3.select('#pBar').append('text').attr({x:this.x + 30,y: this.y + 5,fill:'black'}).text(stopData.name);
+        this.expTime = d3.select('#pBar').append('text').attr({x:this.x + 170,y: this.y + 5,fill:'black'}).text(function(){
+          return toHHMMSS(stopData.expTime);
+        });
+        this.actTime = d3.select('#pBar').append('text').attr({x:this.x + 230,y: this.y + 5,fill:'black'}).text(stopData.actTime);
+         y += R;
+      }
+    });
+
+    LineView = Backbone.View.extend({
+      initialize:function(length){
+        this.path = d3.select('#pBar').append('path');
+        this.render(length);
+      },
+      change: function(){
+        this.path.attr('stroke','#00a13f');
+      },
+      draw: function(distance){
+        var data = [{x: x,y: this.y1},{x: x,y: this.y1+distance}];
+        d3.select('#pBar').append('path').attr('d',this.line(data)).attr({'stroke':'#00a13f','stroke-width':3});
+      },
+      render:function(length){
+        this.x = x;
+        this.y1 = y;
+        this.y2 = y + length;
+        this.length = length;
+        var data = [{x: x,y: this.y1},{x: x,y: this.y2}];
+        this.line = d3.svg.line().x(function(d){return d.x;}).y(function(d){return d.y;});
+        this.path.attr('d',this.line(data)).attr({'stroke':'#D0D3D4','stroke-width':3});
+        y = this.y2+R;
+      }
+    });
+
+var dirDisplay;
+var dirRemainedDisplay;
+var directionsService;
+var routepoints;
+var map;
+var PassedRequest;
+var geocoder;
+
+var fake_data = [
+  {
+    id:328121,
+    shipID: 2013223,
+    start: "08:00",
+    end: "14:00",
+    slocation: "3000 Industrial Rd, San Carios, CA 94070",
+    elocation:"3000 Industrial Rd, San Carios, CA 94070",
+    waypts: [
+    "200 Menlo Oaks Dr,Menlo Park, CA 94025",
+    "400 Page Mill Rd, Palo Alto, CA 94306",
+    "100 S Mary Ave, Sunnyvale, CA 94086",
+    "1300 W Maude Ave, Sunnyvale, CA 94085"]
+  },
+  {
+    id:198653,
+    shipID: 2013223,
+    start: "08:30",
+    end: "14:00"
+
+  },
+  {
+    id:193871,
+    shipID: 2013223,
+    start: "08:30",
+    end: "14:00"
+  }
+]
+
+  Truck = Backbone.Model.extend({
+    initialize: function(id,shipId,status,start,end,slocation,elocation,waypts){
+      this.id = id;
+      this.shipId = shipId;
+      this.status = status;
+      this.start = start;
+      this.end = end;
+      this.route =
+      {
+        start_location : slocation,
+        end_location : elocation,
+        waypoints : waypts
+      };
+    }
+  });
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+  }
+function initialize() {
+ WebSocketTest();
+  var style1 = [
+      /*{
+        stylers:[
+        {hue: '#0044ff'},
+        {saturation: '-60'},
+        {lightness: '-62'},
+        {gamma: '0.97'}
+        ]
+      },
+      {
+        featureType: 'road.highway',
+        stylers:[
+        {hue: '#003bff'},
+        {saturation: -52},
+        {lightness: 20}
+        ]
+      },
+      {
+        featureType: 'water',
+        elementType: 'geometry',
+        stylers:[
+        {hue: '#005eff'},
+        {saturation: -78},
+        {lightness: -52}
+        ]
+      },
+      {
+        elementType: 'labels.text.fill',
+        stylers: [
+        {hue: '#00bbff'},
+        {saturation: -100},
+        {lightness: 70}
+        ]
+      }*/
+      ];
+  directionsService = new google.maps.DirectionsService();
+  dirDisplay = new google.maps.DirectionsRenderer({
+    suppressMarkers: true,
+    suppressInfoWindows: true,
+    polylineOptions : {
+      strokeColor: '#595757',
+      strokeWeight: 4,
+      strokeOpacity: .8
+    }
+  });
+  geocoder = new google.maps.Geocoder();
+  chicago = new google.maps.LatLng(51.256405, 6.740892);
+  var mapOptions = {
+    zoom:14,
+    center: chicago,
+    disableDefaultUI: true,
+    mapTypeControlOptions:{
+        mapTypeIds:[google.maps.MapTypeId.ROADMAP,'map_style']
+      }
+  };
+
+  map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+  var mapHandle = document.getElementById('maphandle');
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapHandle); 
+
+    var styledMap = new google.maps.StyledMapType(style1,{name:"Styled Map"});
+      map.mapTypes.set('map_style',styledMap);
+      map.setMapTypeId('map_style');
+  dirDisplay.setMap(map);
+  truck.marker = new google.maps.Marker({
+        map: map,
+        position: new google.maps.LatLng(51.2606956, 6.745235999999977),
+        icon: 'images/truck_go.png',
+        zIndex: google.maps.Marker.MAX_ZINDEX + 1
+  });
+
+  
+   calcRoute(truck.route);
+
+}
+
+function loadScript() {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+      'callback=initialize';
+  document.body.appendChild(script);
+}
+
+window.onload = loadScript;
+
+</script>
+
+
+  </head>
+  <body>
+
+    <div class="pageheader">
+        <div class="topbarGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarMidGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarLightGreen"></div>
+        <div class="headerDataContainer">
+          <div class="shopLogo"></div>
+          <div class='applabel'>Shipment Delivery Center</div>
+          <div class='pagelabel'>Delivery Status</div>
+          <div class="clear"></div>
+        </div>
+    </div> 
+
+    <div class="map-container">
+      <!--div id="maphandle" class="handle"><a href="javascript:void(0)" onclick="showHide();"><img border="0" src="images/handle.png" /></a></div-->
+      <div id="map-canvas"></div>
+    </div> 
+
+    <div class="table-container" id="detailView">
+      <div id="progressCircle" style="float: left; width: 120px; height: 120px;">
+      </div>
+    </div>
+
+    
+    <div class="clear"></div>
+
+    <div class="pagefooter">
+      <div class="saplogo"></div>
+      <div class="gemaltologo"></div>
+      <div class="powered">Powered by </div>
+      <div class="clear"></div>
+    </div>  
+
+    <div class="textlogger" id="textlog">
+        <div id="logger-closebutton" style="z-index: 22; cursor: pointer; position: relative; float: right; color: #ffffff; font: bold 14px Arial, Helvetica;">X</div>
+        <div class="clear"></div>
+      <textarea id="logger" name="logger" rows = "10" cols="50"></textarea>
+    </div>
+
+    <script type="text/template" id="detailView-template">
+      <!-- firstSection -->
+
+     <div class="tableBlock tBlock">
+      <div id="first">  
+      <div id="mainInfo">
+        <!-- <div class="truckId">
+              Truck 1
+        </div> -->
+        
+      <div class="locationData">
+        <div class="truckstatus"></div>
+          <div class="address_marker"></div>
+          <div id="customeraddress" class="font-color-infoVal address" style="width: 180px;"></div>
+          
+          <!--ul class="inlineList">
+            <li class="icon icon-call info_iconsize"></li>
+            <li class="icon icon-msg info_iconsize"></li>
+            <li class="icon icon-flag info_iconsize"></li>
+          </ul-->
+
+      </div>
+      <div class="clear"></div>
+      </div>
+    </div>
+  </div>
+    
+
+    <!-- secondSection -->
+    <div class="tableBlock cBlock">
+    <div id="second">
+      <div class="section" id="shipment">
+              <span class="sectiontitle">Shipment ID</span><br />
+              <span class="sectioncontent"><%=truck.shipId%></span>
+             </div> 
+
+             <div class="section" id="progress">
+              <span class="sectiontitle">Truck ID</span><br />
+              <span class="sectioncontent"><%=truck.id%></span>
+             </div> 
+
+             <div class="clear"></div>
+
+  <div class="section" id="start">
+              <span class="sectiontitle">Start At</span><br />
+              <span class="sectioncontent"><%=truck.start%><span id="date">12/9/14</span></span>
+             </div> 
+
+             <div class="section" id="end">
+              <span class="sectiontitle">End At</span><br />
+              <span class="sectioncontent"><%=truck.end%><span id="date">12/9/14</span></span>
+             </div> 
+
+             <div class="clear"></div>
+    </div>
+  </div>
+
+  <div class="tableBlock cBlock">
+    <div id="data">
+      <div class="section" id="shipment">
+              <span class="sectiontitle" id="sensorName0"></span><br />
+              <span class="sectioncontent" id="sensorValue1"></span>
+             </div> 
+
+             <div class="section" id="progress">
+              <span class="sectiontitle" id="sensorName2"></span><br />
+              <span class="sectioncontent" id="sensorValue3"></span>
+             </div> 
+
+             <div class="clear"></div>
+
+  <div class="section" id="start">
+              <span class="sectiontitle" id="sensorName4"></span><br />
+              <span class="sectioncontent" id="sensorValue5"></span>
+             </div> 
+
+             <div class="section" id="end">
+              <span class="sectiontitle" id="sensorName6"></span><br />
+              <span class="sectioncontent" id="sensorValue7"></span>
+             </div> 
+
+             <div class="clear"></div>
+
+   <div class="section" id="start">
+              <span class="sectiontitle" id="sensorName8"></span><br />
+              <span class="sectioncontent" id="sensorValue9"></span>
+             </div> 
+
+             <div class="section" id="end">
+              <span class="sectiontitle" id="sensorName10"></span><br />
+              <span class="sectioncontent" id="sensorValue11"></span>
+             </div> 
+
+             <div class="clear"></div>          
+    </div>
+  </div>
+
+  <div id="third">
+    <svg id="pBar" width="100%" height="100%"></svg>
+    <div id="progressDetail"></div>
+  </div>
+  
+        </script>
+
+      
+      <!--progress arc js file include-->
+      <script src="js/progress-arc.js"></script>
+      <script type="text/javascript">
+        truck_id = getParameterByName('id');
+
+        
+        routepoints = JSON.parse(sessionStorage.getItem('waypoints'));
+        //console.log('waypoints:' + routepoints.length);
+        routedata = [
+          {
+            id:truck_id,
+            shipID: 2013223,
+            start: "08:00",
+            end: "14:00",
+            slocation: sessionStorage.getItem('startPoint'),
+            elocation: sessionStorage.getItem('startPoint'),
+            waypts: routepoints
+          }          
+        ]
+
+        _.each(routedata,function(item){
+        if(item.id == truck_id)
+        {
+          truck = new Truck(item.id,item.shipID,0,item.start,item.end,item.slocation,item.elocation,item.waypts);
+        }
+      });
+         DetailView = Backbone.View.extend({
+          el: $('#detailView'),
+           template: _.template($('#detailView-template').html()),
+          render: function(){
+            this.$el.append(this.template({truck: truck}));
+          }
+        });
+
+       var detailView = new DetailView();
+       detailView.render();
+     </script>
+
+      <script>
+
+    
+       //checks for loop values for even or odd   
+        function checkNumber(n) {
+           if(n % 2 == 0) {
+              return 'sensorName'+n;
+           }
+           else if (Math.abs(n) % 2 == 1) {
+              return 'sensorValue'+n;
+           }
+        }
+
+
+           function getSensorData(){
+              var device= getParameterByName('deviceid');
+              var url = "http://54.85.170.183:8089/SmartLogistics/rest/gemalto/"+device;
+              $.get(url, function(data) {
+
+                sensorData = [];
+                var sdata = JSON.parse(data);
+                var mname = false;
+
+                for (var i = 0; i < sdata.deviceState.fields.length; i++) {
+                      
+                      if (sdata.deviceState.fields[i].name.indexOf('featureName') > -1) {
+                        sensorData.push(sdata.deviceState.fields[i].value);
+                        mname = true;
+                      }
+                      else if (sdata.deviceState.fields[i].name.indexOf('measure') > -1 && mname) {
+                        sensorData.push(Number(sdata.deviceState.fields[i].value));
+                        mname = false;
+                      }
+                      
+                };
+
+                for (var j = 0; j < sensorData.length; j++) {
+                    var idStr = checkNumber(j);
+                    $('#'+idStr).html(sensorData[j]);
+                    $('#'+idStr).css('display', 'inline-block');
+                }
+            });
+       }
+
+      
+
+
+      /*call made each time data is pushed to UI to update progress arc and map component data*/
+
+      function loops(distance, total, updatedPosition,routeId, legcomplete) {
+          getSensorData();
+          if (routeId === '1' && legcomplete === false) {
+                for (var i=0; i<placeMarkers.length; i++) {               
+                  placeMarkers[i].setIcon(markerIconBlue);
+                }
+            }
+
+          updateProgress(progress); 
+          var progressValue;
+          if (progressValue === 0.9999995053799322) {
+            progress = startPercent;
+          }
+
+          progressValue = (100-(total*(distance*4)))*0.01;
+
+          console.log(progressValue);
+          progress = progressValue;
+          var LatLng = new google.maps.LatLng(updatedPosition[0].LATITUDE,updatedPosition[0].LONGITUDE);              
+    
+          if (distance.toFixed(2) <= 0.05) {
+            $('.truckstatus').html('On Time');
+            //console.log(placeMarkers);
+            for (var i=0; i<placeMarkers.length; i++) {
+              if (placeMarkers[i].id == routeId) {
+                placeMarkers[i].setIcon(markerIconGreen);
+              }
+            }
+           
+          }
+          else {
+            $('.truckstatus').html(distance.toFixed(2)+' miles to destination');
+          }
+          truck.marker.setPosition(LatLng);
+      };
+
+    $('#logger-closebutton').click(function() {        
+      $('#textlog').hide();
+    });
+ 
+    $('.map-container').height(containerHeight+"%");
+    $('.table-container').height(containerHeight+"%");
+
+function updateModel(legs){
+  for(var i=0;i<legs.length;i++)
+  {
+    var routeID = legs[i].RouteId;
+    var actTime = legs[i].ActualTime.toFixed(0);
+    //progM.stops[routeID-1].actTime = actTime;
+    circles[routeID].change(actTime);
+  }
+}
+
+function createEmptyProgBar(stopData,distanceData){
+  //console.log(distanceData);
+  progScale = d3.scale.linear();
+  progScale.domain([0,d3.max(distanceData)]).range([40,140]);
+
+  for(var i=0;i<stopData.length;i++)
+  {
+    circles.push(new CircleView(stopData[i],i));
+    if(i<distanceData.length)
+    {
+      var length = progScale(distanceData[i]); 
+      lines.push(new LineView(length));
+    }
+  }
+  circles[0].change(0);
+}
+
+function drawPath(distanceData,distance)
+{
+    var sum = 0;
+    //console.log(distance);
+    for(var i=0;i<distanceData.length;i++)
+    {
+     circles[i].draw();
+     sum += distanceData[i];
+     if(sum < distance)
+     {
+       lines[i].change();
+     }else if(sum == distance)
+     {
+       lines[i].change();
+       circles[++i].draw();
+       break;
+     }
+     else{
+        var drawLength = progScale(distance-(sum-distanceData[i]));
+        lines[i].draw(drawLength);
+       break;
+     }
+    }
+}
+
+function toHHMMSS(number) {
+    var sec_num = parseInt(number, 10); // don't forget the second param
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    var time    = hours+':'+minutes+':'+seconds;
+    return time;
+}
+      </script>
+  </div> 
+  </body>
+</html>

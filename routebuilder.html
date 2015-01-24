@@ -1,0 +1,743 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Shipment Delivery Center</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="css/main.css"> 
+    <link rel="stylesheet" href="css/map.css"> 
+    <link rel="stylesheet" href="css/mapfont.css">
+    <link rel="stylesheet" href="jquery-ui/jquery-ui.css">
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/underscore.js"></script>
+    <script type="text/javascript" src="js/backbone.js"></script>
+    <script src="jquery-ui/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/label.js"></script>
+    <script type="text/javascript" src="js/map.js"></script>
+    <script type="text/javascript" src="js/map-utilities.js"></script>
+
+    <style>
+      input { padding:5px; font: 12px Arial, Helvetica; border:1px solid #999;}
+      a {font-family: Arial, Helvetica;}
+    </style>
+
+    <meta charset="utf-8">
+    <script>
+
+    function getParameterByName(name) {
+      name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+      var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+          results = regex.exec(location.search);
+      return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    var fixedHeight = 183;
+    var sheight = $(window).height();
+    var containerHeight = ((sheight-fixedHeight)/sheight)*100;
+
+    var expand = true;
+    var disabled = true;
+    var selectedTruck = "";
+    var rdialog;
+    var map;
+    var startAddress;
+    var nodemap = false;
+    var startLocation = "";    
+    var waypoints = [];
+    var customerdata = [];
+    var customers = [];
+    CustomerCollection = new Backbone.Collection;
+
+    function showHide() {
+      if (expand) {
+          $('.table-container').css('width', '0%');
+          $('.table-container').css('display', 'none');
+          $('.map-container').css('width', '100%');
+          expand = false;
+          //initialize();
+      }
+      else {
+          $('.table-container').css('width', '25%');
+          $('.table-container').css('display', 'block');
+          $('.map-container').css('width', '75%');
+          expand = true;
+          //initialize();
+      }
+    }
+
+    $(function() {
+
+      rdialog = $( "#routeDialog" ).dialog({
+      autoOpen: false,
+      height: 500,
+      width: 500,
+      modal: true,
+      buttons: {
+          Save: function() {
+              setRouteData();
+          },
+        Cancel: function() {
+          rdialog.dialog( "close" );
+        }
+      }
+      
+    });
+
+      $('.map-container').height(containerHeight+"%");
+      $('.table-container').height(containerHeight+"%");
+
+
+    });
+
+
+    $(function() {
+
+        odialog = $( "#orderDialog" ).dialog({
+        autoOpen: false,
+        height: 450,
+        width: 500,
+        modal: true,
+        buttons: {
+            Save: function() {
+                validateForm();        
+            },
+            Cancel: function() {
+                odialog.dialog( "close" );
+          }
+        }
+  
+        });
+  
+    });
+
+    function validateForm() {
+
+      var a = document.getElementById("name").value;
+      var b = document.getElementById("phone").value;
+      var c = document.getElementById("add").value;
+      var d = document.getElementById("city").value;
+      var e = document.getElementById("state").value;
+
+      if (a == " " || a == document.getElementById("name").placeholder) {
+          alert("Customer name must be filled out");
+      } 
+      else if (b == " " || b == document.getElementById("phone").placeholder) {
+          alert("Phone number must be filled out");
+      } 
+      else if (c == " " || c == document.getElementById("add").placeholder) {
+          alert("Address must be filled out");
+      } 
+      else if (d == " " || d == document.getElementById("city").placeholder) {
+          alert("City must be filled out");
+      } 
+      // else if (e == " " || e == document.getElementById("state").placeholder) {
+      //     alert("State must be filled out");
+      // } 
+      else {
+        AddtoCustomerCollection();
+      }
+    }
+
+    function AddtoCustomerCollection() {
+
+      var addrss = document.getElementById("add").value+', ';
+      var cty = document.getElementById("city").value+', ';
+      var ste = (document.getElementById("state").value == 'State') ? '' : document.getElementById("state").value+', ';
+      var ctry = document.getElementById("country").value+', ';
+      var zip = document.getElementById("zipcode").value;
+
+
+      var customer99  = {name : document.getElementById("name").value, 
+                       address : addrss+cty+ste+ctry+zip,
+                       orderid : Number(document.getElementById("order").value),
+                       phone : document.getElementById("phone").value, 
+                       date: ' ',
+                       start : '--:--',
+                       lead : '30:00',
+                       selected : false };
+
+      customerdata.push(customer99);
+
+      geocoder = new google.maps.Geocoder();
+
+      function buildCustomerView(customer) {
+        //console.log(customer);
+            geocoder.geocode( { 'address': customer.address}, function(results, status) {
+              if (status == google.maps.GeocoderStatus.OK) {
+                var location = results[0].geometry.location;
+                new Customer(map,location,customer.address,customer.orderid,customer.name,customer.phone,customer.start,customer.lead,customer.selected);                
+              }
+           });
+
+              CustomerCollection.add(customer);
+              //console.log(CustomerCollection);
+        tableView.render();
+
+      }
+
+
+      buildCustomerView(customerdata[customerdata.length-1]);
+      odialog.dialog( "close" );
+
+    }
+
+    </script>
+
+
+  </head>
+  <body>
+
+    <script type="text/template" id="builder-template">
+    <div id="truck-table">
+        <div id="tableheader">
+            <div id="tbuildheader"><%=models.length%> Results</div>
+            <div id="selectAll"><input type="checkbox" id="selectall" onclick="selectAllCustomers();" /></div>
+            <div class="clear"></div>
+         </div>
+
+          <%_.each(models,function(model){%>
+
+          <div class="tableBlock cBlock">
+              <div class="customerBlock">
+            <div class='custtop'>
+                <div class="orderId"><%=model.get('name')%></div>
+                <div class="status">
+                  <input type="checkbox" <% print('id="toggle'+model.get('orderid')+'"') %> <% print( model.get('selected') ?  'checked="checked"' : '') %> <% print('onclick="checkboxToggle('+model.get('orderid')+');"') %> />
+                </div>
+                <div class="clear"></div>
+                <div class="address" <% print('title="'+model.get('address')+'" alt="'+model.get('address')+'"') %>><%=model.get('address')%></div>
+              </div>  
+              <div class="custContainer infoContainer">
+                <div><label class="sectiontitle">Order</label><br /><label class="sectioncontent"><%=model.get('orderid')%></label></label></div>
+                <div><label class="sectiontitle">Phone</label><br /><label class="sectioncontent"><%=model.get('phone')%></label></div>
+              </div>
+              <div class="infoContainer">
+                <div><label class="sectiontitle">Initial Time</label><br /><label class="sectioncontent"><%=model.get('start')%><label id="date"><%=model.get('date')%></label></label></div>
+                <div><label class="sectiontitle">Lead Time</label><br /><label class="sectioncontent"><%=model.get('lead')%><label id="date"><%=model.get('date')%></label></label></div>
+                </div>
+                </div>
+                </div>          
+            <%})%>  
+    </script>
+           
+
+<div id="routeDialog" title="Confirm Route">
+    <div id="dialogInstructions" style="font-size: 13px; line-height: 1.4; text-align: center;"></div>
+    <div id="dialogContent" style="margin-top: 20px;"></div>
+</div>  
+
+<div id="orderDialog" title="Customer order page"><br>
+    <!-- <div class='waypointBlock'>
+        <div class='customerData'> -->
+              <div><input class='CustomerOrder' type="text" id="order" placeholder="Order number" readonly disabled style="font-size:18px"></div><br>
+              <div><input class='CustomerOrder' type="text" id="name" placeholder="Customer name" style="font-size:18px"></div><br>
+              <div><input class='CustomerOrder' type="text" id="phone" placeholder="Phone" style="font-size:18px"></div><br>
+              <!-- <div>
+                <span><input class='CustomerOrderSubField' type="text" id="IT" placeholder="Initial Time" style="font-size:18px"></span>
+                <span><input class='CustomerOrderSubField' type="text" id="ITdate" placeholder="dd/mm/yy" style="font-size:18px"></span>
+              </div><br>
+              <div>
+                <span><input class='CustomerOrderSubField' type="text" id="LT" placeholder="Lead Time" style="font-size:18px" readonly></span>
+                <span><input class='CustomerOrderSubField' type="text" id="LTdate" placeholder="dd/mm/yy" style="font-size:18px"></span>
+              </div><br> -->
+              <div><input class='CustomerOrder' type="text" id="add" placeholder="Address" style="font-size:21px"></div><br>
+              <div>
+                <span><input class='CustomerOrderSubField' type="text" id="city" placeholder="City" style="font-size:18px"></span>
+                <span><input class='CustomerOrderSubField' type="text" id="state" placeholder="State" style="font-size:18px"></span>
+              </div><br>
+              <div>
+                <span><select class='CustomerdropdownField' type="text" id="country" style="font-size:18px">
+                        <option value="United States" selected>United States</option>
+                        <option value="Germany">Germany</option>
+                        <option value="India">India</option>
+                        <option value="China">China</option>
+                      </select>    
+   <!-- <input class='CustomerOrderSubField' type="text" id="country" placeholder="United States" width="300px"> --></span>
+                <span><input class='CustomerOrderSubField' type="text" id="zipcode" placeholder="Zipcode" style="font-size:18px"></span>
+              </div>
+
+
+      <!--   </div>
+    </div> -->
+</div> 
+
+
+
+    <div class="pageheader">
+        <div class="topbarGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarMidGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarLightGreen"></div>
+        <div class="headerDataContainer">
+          <div class="shopLogo"></div>
+          <div class='applabel'>Shipment Delivery Center</div>
+          <div class='pagelabel'>Route Builder</div>
+          <div class="clear"></div>
+        </div>
+    </div> 
+
+    <div class="map-container">
+      <!--div id="maphandle" class="handle"><a href="javascript:void(0)" onclick="showHide();"><img border="0" src="images/handle.png" /></a></div-->
+      
+      <div id="searchBox-container">
+      <input id="searchBox" type="text" placeholder="Search">
+      <div id="searchIcon"><img src="images/search.png"/></div>
+      </div>
+      <div id="itemDropdown"></div>
+      <div id="routeSelect" class="icon routeicon-check routeSelector selectDisabled" style="z-index: 20"></div>
+      <div><button id="Orderbutton" class="Orderbutton" type="button">+</button></div>
+      <div id="map-canvas"></div>
+    </div> 
+
+    <div class="table-container" id="table-container"></div>
+
+    <div class="clear"></div>
+
+    <div class="pagefooter">
+      <div class="saplogo"></div>
+      <div class="gemaltologo"></div>
+      <div class="powered">Powered by </div>
+      <div class="clear"></div>
+    </div> 
+
+     
+
+    <script type="text/javascript">
+    var directionsService = new google.maps.DirectionsService();
+
+     function enableControls(state) {
+
+      if (disabled === true) {
+        if (state === true) {
+          disabled = false;
+          $('#itemSelect').prop('disabled', false);
+          $('#routeSelect').removeClass('selectDisabled');
+          $('#routeSelect').addClass('selectEnabled');
+
+        }
+      }
+      else {
+        if (state === false) {
+          disabled = true;
+          $('#itemSelect').prop('disabled', true);
+          $('#routeSelect').removeClass('selectEnabled');
+          $('#routeSelect').addClass('selectDisabled');
+        }
+      }
+     }   
+
+
+    $('.routeSelector').click(function() {
+          if (!disabled) {
+              $('#dialogInstructions').html("You have assigned the following customer orders to truck "+selectedTruck+" for delivery." );
+              var chosenCustomers = '';
+              for (var i = 0; i < waypoints.length; i++) {
+                  for (var j=0; j < customerdata.length; j++) {
+                    if (waypoints[i] === customerdata[j].address) {
+
+                      chosenCustomers += "<div class='waypointBlock'><div class='customerOrder'>"+(i+1)+"</div><div class='customerData'><div class='customerName'>"+customerdata[j].name+"</div><div class='customerAddress'>"+customerdata[j].address+"</div></div></div>";
+                    }
+                  }
+                  
+              }
+              $('#dialogContent').html(chosenCustomers);
+              rdialog.dialog( "open" );
+          }           
+          })
+
+    $('.Orderbutton').click(function() {
+
+          var randomnumber=Math.floor(Math.random()*100001);
+          document.getElementById("order").value = randomnumber;
+          //document.getElementById("LT").value = "30:00";
+          document.getElementById("name").value = document.getElementById("name").placeholder;
+          document.getElementById("add").value = document.getElementById("add").placeholder;
+          document.getElementById("city").value = document.getElementById("city").placeholder;
+          document.getElementById("phone").value = document.getElementById("phone").placeholder;
+          document.getElementById("state").value = document.getElementById("state").placeholder;
+          document.getElementById("country").value = document.getElementById("country").placeholder;
+          document.getElementById("zipcode").value = document.getElementById("zipcode").placeholder;
+          odialog.dialog( "open" );       
+    })
+
+    $('[placeholder]').focus(function() {
+        var input = $(this);
+        if (input.val() == input.attr('placeholder')) {
+          input.val('');
+          input.removeClass('placeholder');
+        }
+    }).blur(function() {
+        var input = $(this);
+        if (input.val() == '' || input.val() == input.attr('placeholder')) {
+          input.addClass('placeholder');
+          input.val(input.attr('placeholder'));
+        }
+    }).blur();
+
+
+      // var customerIcon = {
+      //     path: d="M256 369c23 0 41-18 41-41 0-22-18-41-41-41-23 0-41 19-41 41 0 23 18 41 41 41m0 21c-34 0-61-28-61-62 0-34 27-61 61-61 34 0 61 27 61 61 0 34-27 62-61 62z m3-144c49 0 65-37 71-62l-146 0c8 25 27 62 75 62m0 21c-90 0-100-103-100-103l194 0c0 0-3 103-94 103z m-3 153c90 0 164-74 164-164 0-90-74-164-164-164-90 0-164 74-164 164 0 90 74 164 164 164m0 20c-102 0-184-82-184-184 0-102 82-184 184-184 102 0 184 82 184 184 0 102-82 184-184 184z",
+      //     scale: .08,
+      //     strokeOpacity: 1,
+      //     fillColor: '#ffffff',
+      //     fillOpacity: 1,
+      //     rotation: 180,
+      //     anchor: new google.maps.Point(240,90)
+      //   };
+
+      //   var customerIconSelected = {
+      //     path: d="M256 369c23 0 41-18 41-41 0-22-18-41-41-41-23 0-41 19-41 41 0 23 18 41 41 41m0 21c-34 0-61-28-61-62 0-34 27-61 61-61 34 0 61 27 61 61 0 34-27 62-61 62z m3-144c49 0 65-37 71-62l-146 0c8 25 27 62 75 62m0 21c-90 0-100-103-100-103l194 0c0 0-3 103-94 103z m-3 153c90 0 164-74 164-164 0-90-74-164-164-164-90 0-164 74-164 164 0 90 74 164 164 164m0 20c-102 0-184-82-184-184 0-102 82-184 184-184 102 0 184 82 184 184 0 102-82 184-184 184z",
+      //     scale: .08,
+      //     strokeOpacity: 1,
+      //     fillColor: '#058BFA',
+      //     fillOpacity: 2,
+      //     rotation: 180,
+      //     anchor: new google.maps.Point(240,90)
+      //   };
+
+      var customerIcon = "images/ppl_blue.png";
+      var customerIconSelected = "images/ppl_blue_h.png";
+
+
+
+      TableView = Backbone.View.extend({
+        el: $('#table-container'),
+        template: _.template($('#builder-template').html()),
+        render: function(){
+          this.$el.html(this.template({models:CustomerCollection.models, selected: waypoints}));
+        }
+      });
+
+    
+      Customer = Backbone.Model.extend({
+        initialize: function(map,location,address,id,name,phone,start,lead,selected){
+        var that=this;
+        this.id = id;
+        this.name = name;
+        this.phone = phone;
+        this.start = start;
+        this.address = address;
+        this.lead = lead;
+        this.selected = selected;
+        this.location = location;
+        var cicon = customerIcon;
+
+        if (this.selected)
+          cicon = customerIconSelected;
+
+        this.marker = new google.maps.Marker({
+              map: map,
+              position: location,
+              icon: cicon,
+              id: id,
+              address: address
+            });
+        this.label = new Label({
+            map: map,
+            id: this.name
+        });
+
+        this.label.bindTo('position', this.marker, 'position');
+        this.label.bindTo('text', this.label, 'id');
+
+        google.maps.event.addListener(this.marker,'click',function(){
+          var selected = false;
+          if (waypoints.length > 0) {
+              for (var i=0; i < waypoints.length; i++){
+                if (this.address === waypoints[i]) {
+                  selected = true;
+                }
+              }
+          }
+
+          var currentModel;
+
+          for (var j=0; j < CustomerCollection.models.length; j++) {
+                if (CustomerCollection.models[j].attributes.address === that.address) {
+                  currentModel = CustomerCollection.models[j];
+                }
+          }
+
+          //adds or removes current customer from waypoints array and visually changes their marker on map
+          if (!selected) {
+            this.setIcon(customerIconSelected);
+            $('#toggle'+this.id).prop('checked', true);
+            waypoints.push(this.address);
+            that.selected = true;
+            if (currentModel)
+              currentModel.attributes.selected = true;
+            enableControls(true);
+            if (waypoints.length === customers.length) {
+              $('#selectall').prop('checked', true);
+            }           
+              
+          }
+          else {
+            this.setIcon(customerIcon);
+            $('#toggle'+this.id).prop('checked', false);
+            $('#selectall').prop('checked', false);
+            that.selected=false;
+            if (currentModel)
+              currentModel.attributes.selected = false;
+            var arraypoint = waypoints.indexOf(this.address);
+            waypoints.splice(arraypoint,1);
+            if (waypoints.length === 0) {
+              enableControls(false);
+            }
+
+          }
+
+        });
+
+        customers.push(this);
+        return this.marker;
+      }
+    });
+
+    var tableView = new TableView();
+    tableView.render();  
+
+    function checkboxToggle(cbox){
+        var selected = false;
+        var customer;
+
+        console.log(customers);
+
+      for (var i=0; i<customers.length; i++) {
+        if (customers[i].id === cbox) {
+          customer = customers[i];
+        }
+      }
+
+      if (waypoints.length > 0) {
+            for (var i=0; i < waypoints.length; i++){
+              if (customer.address === waypoints[i]) {
+                selected = true;
+              }
+            }
+        }
+
+         var currentModel;
+
+          for (var j=0; j < CustomerCollection.models.length; j++) {
+                if (CustomerCollection.models[j].attributes.address === customer.address) {
+                  currentModel = CustomerCollection.models[j];
+                }
+          }
+
+        //adds or removes current customer from waypoints array and visually changes their marker on map
+      if (!selected) {
+          customer.marker.setIcon(customerIconSelected);
+          waypoints.push(customer.address);
+          customer.selected=true;
+          currentModel.attributes.selected=true;
+          enableControls(true);
+          if (waypoints.length === customers.length)
+            $('#selectall').prop('checked', true);
+
+      
+        }
+        else {
+          customer.marker.setIcon(customerIcon);
+          $('#selectall').prop('checked', false);
+          var arraypoint = waypoints.indexOf(customer.address);
+          customer.selected=false;
+          currentModel.attributes.selected=false;
+          waypoints.splice(arraypoint,1);
+          if (waypoints.length === 0) {
+              enableControls(false);
+            }
+
+           
+
+        }   
+      
+    }
+
+    //select all customers in on the map automatically
+    function selectAllCustomers() {
+        var selected = false;
+        if (waypoints.length === customers.length)
+          selected = true;
+
+        for (var i=0; i < customers.length; i++) {
+          if (!selected) {         
+            customers[i].marker.setIcon(customerIconSelected);
+            $('#toggle'+customers[i].id).prop('checked', true);
+            customers[i].selected = true;
+            CustomerCollection.models[i].attributes.selected=true;
+            console.log(customerdata);
+            if (waypoints.indexOf(customerdata[i].address) == -1)
+              waypoints.push(customerdata[i].address);
+            enableControls(true);
+
+          }
+          else {
+            customers[i].marker.setIcon(customerIcon);
+            $('#toggle'+customers[i].id).prop('checked', false);
+            customers[i].selected = false;
+            CustomerCollection.models[i].attributes.selected=false;
+            var arraypoint = waypoints.indexOf(customers[i].address);
+            waypoints.splice(arraypoint,1);
+            if (waypoints.length === 0) {
+              enableControls(false);
+            }
+          }
+        }        
+    }
+
+    function setRouteData() {
+
+      sessionStorage.setItem('waypoints', JSON.stringify(waypoints));
+      sessionStorage.setItem('truckId', selectedTruck);
+      sessionStorage.setItem('routeStart', JSON.stringify(startLocation));
+      sessionStorage.setItem('startPoint', startAddress);    
+      sessionStorage.setItem('customers', JSON.stringify(customerdata));
+      calcRoute();
+    }
+
+    function calcRoute(){
+      var start = startAddress;
+      var end = startAddress;
+      var wayptsLocations = waypoints;
+      var waypts = [];
+      for(var i=0;i<wayptsLocations.length;i++)
+      {
+        waypts.push({
+          location: wayptsLocations[i],
+          stopover: true
+        });
+      }
+      PassedRequest = {
+        origin: start,
+        destination: end,
+        waypoints: waypts,
+        optimizeWaypoints: false,
+        travelMode: google.maps.TravelMode.DRIVING
+      };
+      directionsService.route(PassedRequest,function(response,status){
+        if(status == google.maps.DirectionsStatus.OK){
+          console.log(response);
+          var route = response.routes[0];
+          createMSG(route); 
+        }else console.log(status);
+      });
+
+      function createMSG(route)
+      {
+        var length = 0;
+        var url = "http://54.85.170.183/espws/restservice/stream/DELIVERY_INFO?action=upsert&workspace=demo&project=logistics";
+        var deleteURL = "http://54.85.170.183/espws/restservice/stream/bulk?action=remove&workspace=demo&project=logistics";
+        var truck_ID = selectedTruck;
+        var header = {
+            "clusterName": "WIN-AMND703SS2B",
+            "port": "19011",
+            "authentication": {
+                "type": "user",
+                "data": "Admin:walldorf",
+                "sslEnabled": "false"
+            }
+        };
+        var forDelete = {};
+        var deleteArray = [];
+        for(var i=0;i<10;i++)
+        {
+          var obj = {
+            "DELIVERY_INFO" : {
+              "TRUCK_ID" : truck_ID,
+              "ROUTE_ID" : i+1
+            }
+          }
+          deleteArray.push(obj);
+        }
+        forDelete.connectionDetails = header;
+        forDelete.content = deleteArray;
+        // $.post(deleteURL,JSON.stringify(forDelete));
+        $.ajax({
+          type: 'POST',
+          url: deleteURL,
+          data: JSON.stringify(forDelete),
+          async: false
+        });
+        for(var i=0;i<route.legs.length;i++)
+        {
+          var result = {};
+          result.connectionDetails = header;
+
+          var lag = route.legs[i];
+          var path = "";
+          var steps = lag.steps;
+          for(var j=0;j<steps.length;j++)
+          {
+            var step = steps[j];
+            var forDecode = step.polyline.points;
+            var line = decode(forDecode,5);
+            for(var k=0;k<line.length;k++)
+            {
+              path += line[k][0] + " " + line[k][1];
+              if(k < line.length-1) path += ",";
+            }
+            if(j < steps.length -1) path += ",";
+          }
+          result.content = {
+            "TRUCK_ID": truck_ID,
+            "ROUTE_ID": (i+1) + "",
+            "START_ADDRESS": lag.start_address,
+            "START_LATITUDE" : lag.start_location.lat(),
+            "START_LONGITUDE" : lag.start_location.lng(),
+            "END_ADDRESS" : lag.end_address,
+            "END_LATITUDE" : lag.end_location.lat(),
+            "END_LONGITUDE" : lag.end_location.lng(),
+            "EXPECTED_DISTANCE" : lag.distance.value,
+            "EXPECTED_TIME" : lag.duration.value,
+            "ROUTE" : path
+          };
+
+          // console.log(result);
+          console.log(result);
+           // $.post(url,JSON.stringify(result))
+           // .always(function(){
+           //  alert('i');
+           // });
+            $.ajax({
+              type: 'POST',
+              url: url,
+              data: JSON.stringify(result),
+              async:false
+            });
+        }
+        var device = getParameterByName('deviceid');
+        console.log(device);
+         window.location.href = "map.html?route=true&deviceid="+device;
+      }
+
+    function decode(encoded, precision) {
+        precision = Math.pow(10, -precision);
+        var len = encoded.length, index=0, lat=0, lng = 0, array = [];
+        while (index < len) {
+            var b, shift = 0, result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+            array.push( [lng * precision, lat * precision] );
+        }
+        return array;
+    }
+  }
+      </script>
+  </body>
+</html>

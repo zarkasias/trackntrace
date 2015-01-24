@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Shipment Delivery Center</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+     <link rel="stylesheet" href="css/main.css"> 
+    <link rel="stylesheet" href="css/map.css"> 
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/underscore.js"></script>
+    <script type="text/javascript" src="js/backbone.js"></script>
+    <script type="text/javascript" src="js/label.js"></script>
+    <Script src="js/map.js"></script>
+
+    <style>
+      input { padding:5px; font: 12px Arial, Helvetica; border:1px solid #999;}
+      a {font-family: Arial, Helvetica;}
+    </style>
+
+    <meta charset="utf-8">
+    <Script>
+
+    function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    var hasRoute = getParameterByName('route');
+
+    var fixedHeight = 183;
+    var sheight = $(window).height();
+    var containerHeight = ((sheight-fixedHeight)/sheight)*100;
+
+    var expand = true;
+    var nodemap = true;
+    var trucks = [];
+    TruckCollection = new Backbone.Collection;
+
+    function showHide() {
+      if (expand) {
+          $('.table-container').css('width', '0%');
+          $('.table-container').css('display', 'none');
+          $('.map-container').css('width', '100%');
+          expand = false;
+          //initialize();
+      }
+      else {
+          $('.table-container').css('width', '25%');
+          $('.table-container').css('display', 'block');
+          $('.map-container').css('width', '75%');
+          expand = true;
+          //initialize();
+      }
+    }
+    </script>
+
+    <script>
+    </script>
+  </head>
+  <body>
+    <script type="text/template" id="tableView-template">
+    <div id="truck-table">
+        <div id="tableheader">
+            <p id="theader"><%=models.length%> Results</p>
+         </div>
+      <%_.each(models,function(model){%>
+        <div class="tableBlock cBlock" <% print('id="truck'+model.id+'"') %>>
+        <div class="pointsBlock">
+          <div class='top'>
+            <div id="trucklink" class="truckId"><a href="javascript:gotoRoute(<%=model.id%>);">Truck <%=model.id%></a></div>
+            <div class="status">
+            <% 
+              var status = model.status
+              switch(status){
+                case 0: 
+                        print('<span style="color: #00a13f">On Time</span>');
+                        break;
+                case 1: print('<span style="color: #D34845">Late</span>');
+                        break;
+                case 2: print('<span style="color: #0167a0">Complete</span>');
+                        break;
+                default: print('Wrong!');
+                        break;
+              }
+            %>
+            </div>
+          </div>
+          <div class="infoContainer">
+            <div><label class="sectiontitle">Shipment ID</label><br /><label class="sectioncontent"><%=model.shipId%></label></div>
+            <div><label class="sectiontitle">Progress</label><br /><label class="sectioncontent"><%=model.progress%>%</label></div>
+          </div>
+          <div class="infoContainer">
+            <div><label class="sectiontitle">Start At</label><br /><label class="sectioncontent"><%=model.start%></label></div>
+            <div><label class="sectiontitle">End At</label><br /><label class="sectioncontent"><%=model.end%></label></div>
+            </div>
+          </div>
+        </div>          
+      <%})%>
+
+
+    </script>
+
+    <div class="pageheader">
+        <div class="topbarGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarMidGreen"></div>
+        <div class="topbarWhite"></div>
+        <div class="topbarLightGreen"></div>
+        <div class="headerDataContainer">
+          <div class="shopLogo"></div>
+          <div class='applabel'>Shipment Delivery Center</div>
+          <div class='pagelabel'>Fleet Management</div>
+          <div class="clear"></div>
+        </div>
+    </div> 
+
+    <div class="map-container">
+      <!--div id="maphandle" class="handle"><a href="javascript:void(0)" onclick="showHide();"><img border="0" src="images/handle.png" /></a></div-->
+      <!--div id="itemDropdown"></div-->
+      <div id="searchBox-container">
+      <input id="searchBox" type="text" placeholder="Search">
+      <div id="searchIcon"><img src="images/search.png"/></div>
+      </div>
+      <div id="map-canvas"></div>
+    </div> 
+
+    <div class="table-container" id="table-container"></div>
+
+    <div class="clear"></div>
+
+    <div class="pagefooter">
+      <div class="saplogo"></div>
+      <div class="gemaltologo"></div>
+      <div class="powered">Powered by </div>
+      <div class="clear"></div>
+    </div>  
+
+  
+  <script type="text/javascript">
+  TableView = Backbone.View.extend({
+    el: $('#table-container'),
+    template: _.template($('#tableView-template').html()),
+    render: function(){
+      this.$el.html(this.template({models:TruckCollection.models}));
+    }
+  });
+
+  Truck = Backbone.Model.extend({
+    initialize: function(map,location,id,shipId,progress,status,start,end){
+      var that = this;
+      this.id = id;
+      this.shipId = shipId;
+      this.progress = progress;
+      this.status = status;
+      this.start = start;
+      this.end = end;
+      this.position = location;
+      this.marker = new google.maps.Marker({
+        map: map,
+        position: location,
+        icon: 'images/truck_go.png'
+      });
+      this.label = new Label({
+            map: map,
+            id: this.id
+        });
+
+        this.label.bindTo('position', this.marker, 'position');
+        this.label.bindTo('text', this.label, 'id');
+
+      google.maps.event.addListener(this.marker,'click',function(){
+          for (var i = 0; i < trucks.length; i++) {
+            $('#truck'+trucks[i].id+' #trucklink').removeClass('selectedId');
+          }
+          $('#truck'+that.id+' #trucklink').addClass('selectedId');
+      });
+      trucks.push(this);
+      return this.marker;
+    }
+  });
+      
+function setTrucks() {
+    
+ if (hasRoute) {
+      var newTruckId = Number(sessionStorage.getItem('truckId'));
+      var truckAddress = JSON.parse(sessionStorage.getItem('routeStart'));
+      var keys = [];
+     //  for (var i in truckAddress)
+     // console.log(truckAddress);
+
+                    new Truck(map,new google.maps.LatLng(truckAddress.k,truckAddress.D),newTruckId,2013223,0,0,'08:30','14:00');
+                    new Truck(map,new google.maps.LatLng(51.260535, 6.726932),65403,0134543,100,2,'08:30','14:00');
+                    new Truck(map,new google.maps.LatLng(51.252424, 6.774739),75468,0243123,100,2,'08:30','14:00');
+                    new Truck(map,new google.maps.LatLng(51.261234, 6.765041),70934,6443172,100,2,'08:30','14:00');
+  
+    }
+};
+      
+
+  function gotoRoute(truckId) {
+    var device = getParameterByName('deviceid');
+    if (truckId != 65403 && truckId != 75468  && truckId != 70934) {
+      window.location.href="routemap.html?id="+truckId+"&deviceid="+device;
+    }
+
+  };
+
+   $('.map-container').height(containerHeight+"%");
+   $('.table-container').height(containerHeight+"%");
+
+  var tableView = new TableView();
+  tableView.render();
+  </script>
+  </body>
+</html>
