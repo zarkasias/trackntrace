@@ -96,6 +96,7 @@ var PlaceMarker = {
                             content: String(id)
                         });
                     //infoWindow.open(map,placeMarker);
+                    console.log(placeMarker);
                     google.maps.event.addListener(placeMarker, 'click', function () {
                     //infoWindow.open(map,placeMarker);
                     });

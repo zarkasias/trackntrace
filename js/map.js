@@ -40,8 +40,8 @@ function initialize() {
 
   if (nodemap) {    
     var mapOptions = {
-        zoom: 14,
-        center: new google.maps.LatLng(51.256405, 6.740892),
+        zoom: 15,
+        center: new google.maps.LatLng(41.403629, 2.165505),
         streetViewControl: false,
         mapTypeControl: false,
         mapTypeControlOptions:{
@@ -51,8 +51,8 @@ function initialize() {
   }
   else {
     var mapOptions = {
-      zoom: 13,
-      center: new google.maps.LatLng(51.256405, 6.740892),
+      zoom: 15,
+      center: new google.maps.LatLng(41.403664, 2.173201),
       streetViewControl: false,
       mapTypeControl: false,
       //disableDefaultUI: true,
@@ -147,7 +147,7 @@ function initialize() {
     else {        
 
 
-          startAddress = 'Stockumer Kirchstrasse 61, 40474 Dusseldorf, Germany';
+          startAddress = 'Carrer del Consell de Cent, 475 08011 Barcelona';
         
            var geocoder = new google.maps.Geocoder();
         
@@ -158,9 +158,9 @@ function initialize() {
           var customers = [];
 
 
-          var customer0 = {name : "Customer 1", address : 'Kehler Strasse 33, 40468 Dusseldorf, Germany', orderid : 34567, phone : '211 4534 4567',start : '--:--',lead : '30:00',selected : false };
-          var customer2 = {name : "Customer 3", address : 'Gneisenaustrasse 38, 40447 Dusseldorf, Germany', orderid : 34568, phone : '211 4522 4321',start : '--:--',lead : '30:00',selected : false };
-          var customer1 = {name : "Customer 2", address : 'Chamissostrasse 10B, 40237 Dusseldorf, Germany', orderid : 34569, phone : '211 2453 0184',start : '--:--',lead : '30:00',selected : false };
+          var customer0 = {name : "Customer 1", address : 'Carrer de Taxdirt, 28 08025 Barcelona Spain', orderid : 34567, phone : '932 36 04 32',start : '--:--',lead : '30:00',selected : false };
+          var customer1 = {name : "Customer 2", address : 'Carrer de Llorens i Barba, 65 08025 Barcelona, Spain', orderid : 34568, phone : '932 37 06 21',start : '--:--',lead : '30:00',selected : false };
+          var customer2 = {name : "Customer 3", address : 'Carrer de Cartagena, 207 08013 Barcelona, Spain', orderid : 34569, phone : '932 29 08 19',start : '--:--',lead : '30:00',selected : false };
           //var customer3 = {name : "Customer 4", address : 'Rotterdamer Straße 116, 40474 Düsseldorf, Germany', orderid : 34570, phone : '211 2453 0184',start : '--:--',lead : '30:00',selected : false };
 
          

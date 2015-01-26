@@ -191,11 +191,12 @@ function setTrucks() {
      // console.log(truckAddress);
 
                     new Truck(map,new google.maps.LatLng(truckAddress.k,truckAddress.D),newTruckId,2013223,0,0,'08:30','14:00');
-                    new Truck(map,new google.maps.LatLng(51.260535, 6.726932),65403,0134543,100,2,'08:30','14:00');
-                    new Truck(map,new google.maps.LatLng(51.252424, 6.774739),75468,0243123,100,2,'08:30','14:00');
-                    new Truck(map,new google.maps.LatLng(51.261234, 6.765041),70934,6443172,100,2,'08:30','14:00');
+      }              
+                    new Truck(map,new google.maps.LatLng(41.401799, 2.175430),65403,0134543,100,0,'08:30','14:00');
+                    new Truck(map,new google.maps.LatLng(41.400415, 2.180086),75468,0243123,100,2,'08:30','14:00');
+                    //new Truck(map,new google.maps.LatLng(51.261234, 6.765041),70934,6443172,100,2,'08:30','14:00');
   
-    }
+    //}
 };
       
 
@@ -203,6 +204,9 @@ function setTrucks() {
     var device = getParameterByName('deviceid');
     if (truckId != 65403 && truckId != 75468  && truckId != 70934) {
       window.location.href="routemap.html?id="+truckId+"&deviceid="+device;
+    }
+    else if (truckId === 65403 ) {
+      window.location.href="intmap.html?id="+truckId+"&deviceid="+device;
     }
 
   };

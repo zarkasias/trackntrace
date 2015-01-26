@@ -35,6 +35,8 @@
     var placeMarkers = [];
     var Locations;    
     var sensorData = [];
+    var startLocation;
+    var endLocation;
 
 
     function showHide() {
@@ -98,12 +100,12 @@
             var customers = JSON.parse(sessionStorage.getItem('customers'));
 
             var names = [];
-            names.push('Delivery Center');
+            names.push('Warehouse');
             for(var i=0;i<customers.length;i++)
             {
               names.push(customers[i].name);
             }
-            names.push('Delivery Center');
+            names.push('Warehouse');
             var stopData = [];
             for(var i=0;i<names.length;i++)
             {
@@ -372,9 +374,9 @@ function initialize() {
     }
   });
   geocoder = new google.maps.Geocoder();
-  chicago = new google.maps.LatLng(51.256405, 6.740892);
+  chicago = new google.maps.LatLng(41.403664, 2.173201);
   var mapOptions = {
-    zoom:16,
+    zoom:17,
     center: chicago,
     disableDefaultUI: true,
     mapTypeControlOptions:{
@@ -383,6 +385,9 @@ function initialize() {
   };
 
   map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+  startLocation = new google.maps.LatLng(41.401799, 2.175430);
+  endLocation = new google.maps.LatLng(41.402677, 2.174312);
 
   var mapHandle = document.getElementById('maphandle');
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapHandle); 
@@ -393,7 +398,7 @@ function initialize() {
   dirDisplay.setMap(map);
   truck.marker = new google.maps.Marker({
         map: map,
-        position: new google.maps.LatLng(51.2606956, 6.745235999999977),
+        position: new google.maps.LatLng(41.401799, 2.175430),
         icon: 'images/truck_go.png',
         zIndex: google.maps.Marker.MAX_ZINDEX + 1
   });
@@ -569,18 +574,28 @@ window.onload = loadScript;
       <script type="text/javascript">
         truck_id = getParameterByName('id');
 
+        var tag2 = [41.402741, 2.176708];
+        var tag3 = [41.403598, 2.175566];
+        var tag4 = [41.404476, 2.174462];
+        var tag5 = [41.403512, 2.173183];
+        var tag6 = [41.404339, 2.172044];
+        var tag7 = [41.403509, 2.170941];
+        var tag8 = [41.402665, 2.172040];
+        var tag9 = [41.401796, 2.173199];
+
+
+
         
-        routepoints = JSON.parse(sessionStorage.getItem('waypoints'));
-        console.log(routepoints);
+        routepoints = [tag2, tag3, tag4, tag5, tag6, tag7, tag8, tag9];
         //console.log('waypoints:' + routepoints.length);
         routedata = [
           {
             id:truck_id,
-            shipID: 2013223,
+            shipID: 2013226,
             start: "08:00",
             end: "14:00",
-            slocation: sessionStorage.getItem('startPoint'),
-            elocation: sessionStorage.getItem('startPoint'),
+            slocation: startLocation,
+            elocation: endLocation,
             waypts: routepoints
           }          
         ]
