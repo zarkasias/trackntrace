@@ -28,6 +28,7 @@
     }
 
     var hasRoute = getParameterByName('route');
+    hasRoute = true;
 
     var fixedHeight = 183;
     var sheight = $(window).height();
@@ -185,7 +186,13 @@ function setTrucks() {
     
  if (hasRoute) {
       var newTruckId = Number(sessionStorage.getItem('truckId'));
+      if (newTruckId == undefined) {
+        newTruckId = 328121;
+      }
       var truckAddress = JSON.parse(sessionStorage.getItem('routeStart'));
+      if (truckAddress == undefined) {
+        truckAddress = {k: 41.39949130000001, D: 2.1766423999999915};
+      }
       var keys = [];
      //  for (var i in truckAddress)
      // console.log(truckAddress);

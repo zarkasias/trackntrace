@@ -10,17 +10,35 @@ var header = {
     }
 };
 
-function calcRoute(routeInfo){
+function calcRoute(routeInfo){  
   var start = routeInfo.start_location;
   var end = routeInfo.end_location;
   var wayptsLocations = routeInfo.waypoints;
+  if (start instanceof Array) {
+    start = new google.maps.LatLng(start[0], start[1]);
+    end = new google.maps.LatLng(end[0], end[1]);
+  }
   var waypts = [];
   for(var i=0;i<wayptsLocations.length;i++)
   {
-    waypts.push({
+    //check if route info is address or coordinates
+    if (wayptsLocations[i] instanceof Array) {
+
+        waypts.push({
+        location: new google.maps.LatLng(wayptsLocations[i][0], wayptsLocations[i][1]),
+        stopover: true
+      });
+
+    }
+    else {
+
+      waypts.push({
       location: wayptsLocations[i],
       stopover: true
     });
+
+    }
+    
   }
   PassedRequest = {
     origin: start,
@@ -31,7 +49,6 @@ function calcRoute(routeInfo){
   };
   directionsService.route(PassedRequest,function(response,status){
     if(status == google.maps.DirectionsStatus.OK){
-      console.log(response);
       var route = response.routes[0];
       var overview_path = route.overview_path;
       dirDisplay.setDirections(response);
@@ -46,9 +63,6 @@ function calcRoute(routeInfo){
       startBlue = "images/center_blue.png";
       startGreen = "images/center_green.png";
 
-      console.log(Locations);
-
-
   for (i = 0; i < Locations.length; i++) {
       if (i === 0) {
         markerIcon = startBlue;
@@ -56,8 +70,17 @@ function calcRoute(routeInfo){
       else {
         markerIcon = markerIconBlue;
       }
-        
-        PlaceMarker.createNew(map, Locations[i], markerIcon, i, "data");
+
+      if (Locations[i] instanceof Array || Locations[i] instanceof Object) {
+        //replace marker with blank image when not indicated as stopover
+        if (Locations[i][3] === false) {
+              markerIcon = "images/blank.png";
+        }
+        PlaceMarker.createNewByLatLng(map, Locations[i], markerIcon, i, "data");
+      }      
+       else {
+          PlaceMarker.createNew(map, Locations[i], markerIcon, i, "data");
+      }
     }
 
   startSimulation(328121,50,100);
@@ -85,6 +108,7 @@ var PlaceMarker = {
             geocoder.geocode({'address': address}, function (results, status) {
                 if (status === google.maps.GeocoderStatus.OK) {
                     var placeMarker = new google.maps.Marker({
+
                         position: results[0].geometry.location,
                         icon: icon,
                         id: id,
@@ -106,6 +130,19 @@ var PlaceMarker = {
                     return placeMarker;
                 }
             });
+        },
+
+        createNewByLatLng: function(map,latlng,icon,id,message){
+            var marker = new google.maps.Marker({
+                position : new google.maps.LatLng(latlng[0], latlng[1]),
+                map : map,
+                icon : icon,
+                address: latlng[2],
+                id : id
+            });
+            PlaceMarker.count++;
+            placeMarkers.push(marker);
+            return marker;
         },
 
         length: function () {

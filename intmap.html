@@ -38,6 +38,10 @@
     var startLocation;
     var endLocation;
 
+  //startLocation = "Carrer de Valencia, 418-420, 08013 Barcelona, Spain";
+  startLocation = [41.401799, 2.175430, "Carrer de Valencia, 418-420, 08013 Barcelona, Spain"];
+  endLocation = startLocation;
+
 
     function showHide() {
       if (expand) {
@@ -61,7 +65,7 @@
   if ("WebSocket" in window)
   {
      console.log("WebSocket is supported by your Browser!");
-     $('.truckstatus').html('Delivery Center');
+     $('.truckstatus').html('Warehouse');
      // Let us open a web socket
      var ws = new WebSocket("ws://54.85.170.183:9092");
      ws.onopen = function()
@@ -82,6 +86,7 @@
      { 
 
         var response=jQuery.parseJSON(evt.data);
+        console.log(response);
         var updatedPosition ="";
 
         if (response.event) {
@@ -364,6 +369,7 @@ function initialize() {
       }*/
       ];
   directionsService = new google.maps.DirectionsService();
+
   dirDisplay = new google.maps.DirectionsRenderer({
     suppressMarkers: true,
     suppressInfoWindows: true,
@@ -386,8 +392,7 @@ function initialize() {
 
   map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
-  startLocation = new google.maps.LatLng(41.401799, 2.175430);
-  endLocation = new google.maps.LatLng(41.402677, 2.174312);
+  
 
   var mapHandle = document.getElementById('maphandle');
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mapHandle); 
@@ -401,6 +406,14 @@ function initialize() {
         position: new google.maps.LatLng(41.401799, 2.175430),
         icon: 'images/truck_go.png',
         zIndex: google.maps.Marker.MAX_ZINDEX + 1
+  });
+
+  var contentString = '<div >Truck Info:<p><h5>Speed: 60<br />Temperature:&nbsp;55<br />Pressure:&nbsp;26</h5></p></div>';
+  var truckInfo = new google.maps.InfoWindow({
+      content : contentString
+  });
+  google.maps.event.addListener(truck.marker,'click',function(){
+      truckInfo.open(map,truck.marker);
   });
 
   
@@ -574,19 +587,14 @@ window.onload = loadScript;
       <script type="text/javascript">
         truck_id = getParameterByName('id');
 
-        var tag2 = [41.402741, 2.176708];
-        var tag3 = [41.403598, 2.175566];
-        var tag4 = [41.404476, 2.174462];
-        var tag5 = [41.403512, 2.173183];
-        var tag6 = [41.404339, 2.172044];
-        var tag7 = [41.403509, 2.170941];
-        var tag8 = [41.402665, 2.172040];
-        var tag9 = [41.401796, 2.173199];
-
-
+        var tag2 = [41.402741, 2.176708, "Carrer de la Marina, 246-248, 08013 Barcelona, Spain", false];
+        var tag3 = [41.403598, 2.175566, "Carrer de Mallorca, 422, 08013 Barcelona, Spain", true]; //marker A
+        var tag4 = [41.404476, 2.174462, "Carrer de Provenca, 452, 08025 Barcelona, Spain", false];
+        var tag5 = [41.403512, 2.173183, "Carrer de Sardenya, 318, Barcelona, Spain", true]; //marker B
+        var tag6 = [41.402677, 2.174312, "Carrer de Sardenya, 297, 08013 Barcelona, Spain", true]; //marker C
 
         
-        routepoints = [tag2, tag3, tag4, tag5, tag6, tag7, tag8, tag9];
+        routepoints = [tag2, tag3, tag4, tag5, tag6];
         //console.log('waypoints:' + routepoints.length);
         routedata = [
           {
